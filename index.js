@@ -9,16 +9,21 @@ const router = new koaRouter();
 const port = 8888
 const appId = "<APP_ID>";
 const appSecret = "<APP_SECRET>";
+const appDomain = "<APP_DOMAIN>";
 const redirect_uri = `http://localhost:${port}/oauth/handle`
 
-// Authing 控制台 redirect_uri 可以填下面这个。本示例 code 换 token，token 换用户信息都在后端完成。code 由 Authing 以 url query 的形式发到 redirect_uri。
+/**
+ * Authing 控制台 redirect_uri 可以填下面这个。
+ * 本示例 code 换 token，token 换用户信息都在后端完成。
+ * code 由 Authing 以 url query 的形式发到 redirect_uri。
+ */
 router.get("/oauth/handle", async (ctx, next) => {
   let code = ctx.query.code;
   // code 换 token
   let code2tokenResponse
   try {
     code2tokenResponse = await axios.post(
-      "https://sso.authing.cn/token",
+      `${appDomain}/oauth/token`,
       qs.stringify({
         code,
         client_id: appId,
@@ -38,7 +43,7 @@ router.get("/oauth/handle", async (ctx, next) => {
   }
   let { access_token, refresh_token } = code2tokenResponse.data;
   // token 换用户信息
-  let token2UserInfoResponse = await axios.get("https://users.authing.cn/oauth/user/userinfo?access_token=" + access_token);
+  let token2UserInfoResponse = await axios.get(`${appDomain}/oauth/user/userinfo?access_token=` + access_token);
 
   // 这里可以操作用户信息，比如存入数据库
   // ...
@@ -48,10 +53,10 @@ router.get("/oauth/handle", async (ctx, next) => {
   let refreshTokenRes
   try {
     refreshTokenRes = await axios.post(
-      'https://sso.authing.cn/sso/token',
+      `${appDomain}/oauth/token`,
       qs.stringify({
-        app_id: appId,
-        app_secret: appSecret,
+        client_id: appId,
+        client_secret: appSecret,
         refresh_token,
         grant_type: "refresh_token"
       }),
